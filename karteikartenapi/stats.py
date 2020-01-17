@@ -1,5 +1,6 @@
 from __future__ import division
-import models
+from functools import reduce
+from . import models
 
 def collection_stats(user_id, collection):
     item_ids = collection['item_ids']
@@ -13,7 +14,7 @@ def collection_stats(user_id, collection):
         'updated_at': None
     }
 
-    if len(filter(lambda item: item is not None, scorecards)) == 0:
+    if len(list(filter(lambda item: item is not None, scorecards))) == 0:
         collection.update(stats=None)
         return collection
 
@@ -31,9 +32,9 @@ def collection_stats(user_id, collection):
 
     total = stats['corrects'] + stats['wrongs'] + stats['skippeds']
     stats['total'] = total
-    stats['corrects_ratio'] = stats['corrects'] / total
-    stats['wrongs_ratio'] = stats['wrongs'] / total
-    stats['skippeds_ratio'] = stats['skippeds'] / total
+    stats['corrects_ratio'] = None if total == 0 else stats['corrects'] / total
+    stats['wrongs_ratio'] = None if total == 0 else stats['wrongs'] / total
+    stats['skippeds_ratio'] = None if total == 0 else stats['skippeds'] / total
     stats['updated_at'] = stats['updated_at'].isoformat() if stats['updated_at'] is not None else None
 
     collection.update(stats=stats)

@@ -1,7 +1,27 @@
 import os
-from google.appengine.ext import ndb
+import mock
+import google.auth.credentials
+from google.cloud import ndb
 
 CLOUD_STORAGE_BASE_URL = os.getenv('CLOUD_STORAGE_BASE_URL', 'https://storage.cloud.google.com')
+
+
+def setup_db():
+    if os.getenv('GAE_ENV', '').startswith('standard'):
+        # production
+        return ndb.Client()
+    else:
+        os.environ["DATASTORE_DATASET"] = "test"
+        os.environ["DATASTORE_PROJECT_ID"] = "test"
+        os.environ["DATASTORE_EMULATOR_HOST"] = "localhost:8001"
+        os.environ["DATASTORE_EMULATOR_HOST_PATH"] = "localhost:8001/datastore"
+        os.environ["DATASTORE_HOST"] = "http://localhost:8001"
+
+        credentials = mock.Mock(spec=google.auth.credentials.Credentials)
+        return ndb.Client(project="test", credentials=credentials)
+
+
+db = setup_db()
 
 
 class User(ndb.Model):
@@ -81,7 +101,8 @@ class Collection(ndb.Model):
 
     @classmethod
     def query_by_user_id(cls, user_id):
-        return cls.query(Collection.owner_id == ndb.Key(User, user_id)).order(-Collection.created_at)
+        return cls.query(Collection.owner_id == ndb.Key(User, user_id))\
+            .order(-Collection.created_at)
 
     @classmethod
     def get_by_collection_id(cls, collection_id):

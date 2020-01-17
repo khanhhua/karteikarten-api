@@ -1,35 +1,11 @@
-runtime: python27
-threadsafe: yes
-api_version: 1
-
-libraries:
-  - name: ssl
-    version: latest
-  - name: PIL
-    version: 1.1.7
-
-env_variables:
-  CLOUD_STORAGE_BASE_URL: https://storage.cloud.google.com
-  HASHIDS_SECRET: piA2IRl37y
+runtime: python37
 
 handlers:
-  # This configures Google App Engine to serve the files in the app's static
-  # directory.
-
   - url: /
     static_files: static/index.html
     upload: static/index.html
-
   - url: /(.*\.(gif|png|jpg|js|css|json|txt))$
     static_files: static/\1
     upload: static/.*\.(gif|png|jpg|js|css|json|txt)$
-
-  # This handler routes all requests not caught above to your main app. It is
-  # required when static routes are defined, but can be omitted (along with
-  # the entire handlers section) when there are no static files defined.
-  - url: /(collections|cards|me|auth)(/.*(/.*)?)?
-    script: main.app
-  - url: /collections/recent
-    script: main.app
-  - url: /media
-    script: media.app
+  - url: /.*
+    script: auto
