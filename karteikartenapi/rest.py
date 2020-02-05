@@ -6,7 +6,7 @@ from google.auth import default as GaDefault
 from google.auth.iam import Signer
 from google.auth.transport.requests import Request
 
-from . import models
+from . import models, context_required
 from . import stats
 from .auth import (
     current_user,
@@ -21,6 +21,7 @@ def login():
     return jsonify(jwt="base64")
 
 
+@context_required
 def register():
     data = request.json
     id_token = data['id_token']
@@ -44,6 +45,7 @@ def register():
         return make_response((jsonify(ok=False), 403))
 
 
+@context_required
 def list_cards():
     user_id = identity()
     cards, next_cursor, more = models.Card.query_by_user_id(user_id).fetch_page(10)
@@ -54,20 +56,23 @@ def list_cards():
                    next_cursor=next_cursor.urlsafe() if more else None)
 
 
+@context_required
 def create_card():
     user_id = identity()
 
-    data = request.json
-    media_id = data['media_id'] if 'media_id' in data else None
-    media = models.Media.query_by_media_id(media_id)
-    if media is None:
-        media_id = None
+    EDITABLES = ['back', 'front', 'media_id']
+    data = {k: v for (k, v) in request.json.items() if k in EDITABLES}
+    media = None
+    if 'media_id' in data:
+        media_id = data['media_id']
+        data['media_id'] = Key(models.Media, media_id)
+        media = models.Media.get_by_media_id(media_id)
+
+        if media is None:
+            del data['media_id']
 
     card = models.Card(
-        owner_id=Key(models.User, user_id),
-        front=data['front'],
-        back=data['back'],
-        media_id=media_id
+        owner_id=Key(models.User, user_id), **data,
     )
     card_key = card.put()  # returns key
     if media is not None:
@@ -77,6 +82,7 @@ def create_card():
     return jsonify(ok=True, card=card.to_json())
 
 
+@context_required
 def get_card_by_id(card_id):
     card = models.Card.get_by_card_id(card_id)
     if card is None:
@@ -92,6 +98,7 @@ def get_card_by_id(card_id):
         return jsonify(ok=True, card=json)
 
 
+@context_required
 def update_card_by_id(card_id):
     user_id = identity()
     card = models.Card.get_by_card_id(card_id)
@@ -107,11 +114,11 @@ def update_card_by_id(card_id):
     old_media = card.media_id.get() if old_media_id is not None else None
 
     updated_media_id = request.json['media_id'] if 'media_id' in request.json else None
-    updated_media = models.Media.get_by_media_id(updated_media_id)
-    if updated_media is None:
+    if updated_media_id is None:
         request.json['media_id'] = None
     else:
-        request.json['media_id'] = updated_media.key
+        updated_media = models.Media.get_by_media_id(updated_media_id)
+        request.json['media_id'] = None if updated_media is None else updated_media.key
 
     data = {k: v for (k, v) in request.json.items() if k in EDITABLES}
     card.populate(**data)
@@ -135,32 +142,33 @@ def update_card_by_id(card_id):
     return jsonify(ok=True, card=card.to_json())
 
 
+@context_required
 def list_collections():
     param_features = request.args.get('features')
 
     user_id = identity()
-    with models.db.context():
-        collections, next_cursor, more = models.Collection\
-                .query_by_user_id(user_id)\
-                .fetch_page(page_size=20)
+    collections, next_cursor, more = models.Collection\
+            .query_by_user_id(user_id)\
+            .fetch_page(page_size=20)
 
     if param_features is None:
         return jsonify(ok=True,
                        collections=[item.to_json() for item in collections],
-                       next_cursor=next_cursor.urlsafe() if more else None)
+                       next_cursor=next_cursor.urlsafe().decode('utf-8') if more else None)
 
     features = param_features.split(',')
     if 'stats' in features:
         collections = [stats.collection_stats(user_id, item.to_json()) for item in collections]
         return jsonify(ok=True,
                        collections=collections,
-                       next_cursor=next_cursor.urlsafe() if more else None)
+                       next_cursor=next_cursor.urlsafe().decode('utf-8') if more else None)
     else:
         return jsonify(ok=True,
                        collections=[item.to_json() for item in collections],
-                       next_cursor=next_cursor.urlsafe() if more else None)
+                       next_cursor=next_cursor.urlsafe().decode('utf-8') if more else None)
 
 
+@context_required
 def list_recent_collections():
     param_features = request.args.get('features')
 
@@ -184,6 +192,7 @@ def list_recent_collections():
                        next_cursor=None)
 
 
+@context_required
 def create_collection():
     user = current_user()
 
@@ -201,6 +210,7 @@ def create_collection():
     return jsonify(ok=True, collection=collection.to_json())
 
 
+@context_required
 def get_collection_by_id(collection_id):
     collection = models.Collection.get_by_collection_id(collection_id)
     if collection is None:
@@ -216,6 +226,7 @@ def get_collection_by_id(collection_id):
     return jsonify(ok=True, collection=collection_data)
 
 
+@context_required
 def update_collection_by_id(collection_id):
     user_id = identity()
     collection = models.Collection.get_by_collection_id(collection_id)
@@ -236,6 +247,7 @@ def update_collection_by_id(collection_id):
     return jsonify(ok=True, collection=collection.to_json())
 
 
+@context_required
 def update_scorecard(card_id):
     user_id = identity()
     scorecard = models.ScoreCard.query_by_card_id(user_id, card_id)
@@ -260,6 +272,7 @@ def update_scorecard(card_id):
     return jsonify(ok=True, scorecard=scorecard.to_json())
 
 
+@context_required
 def update_recent_collections():
     user = current_user()
     collection_id = int(request.json['collection_id'])
@@ -274,6 +287,7 @@ def update_recent_collections():
     else:
         recent_collection_ids.insert(0, collection_id)
         user.populate(recent_collection_ids=list(set(recent_collection_ids))[0:10])
+
     user.put()
 
     return jsonify(ok=True)

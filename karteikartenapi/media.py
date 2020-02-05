@@ -2,20 +2,22 @@ import os
 import io
 from math import floor
 from flask import jsonify, request, make_response
-from google.cloud import storage
+from google.cloud import storage, logging
 from PIL import Image
 from hashids import Hashids
 import hashlib
 from time import time
 
-from . import models
+from karteikartenapi.models import Media
+from . import models, context_required
 from .auth import (
     credentials,
-    current_user
-)
+    current_user,
+    identity)
 
+logger = logging.Client().logger('media')
 
-CLOUD_STORAGE_BASE_URL = os.getenv('CLOUD_STORAGE_BASE_URL', 'https://storage.cloud.google.com')
+CLOUD_STORAGE_BASE_URL = os.getenv('CLOUD_STORAGE_BASE_URL', 'https://storage.googleapis.com')
 HASHIDS_SECRET = os.getenv('HASHIDS_SECRET', 'secret')
 
 ALLOWED_TYPES = {
@@ -44,6 +46,7 @@ def hashid_from_string(s):
     return hashids.encode(hashed * 10 + now_timestamp)
 
 
+@context_required
 def upload():
     if not bucket.exists():
         return make_response((jsonify(ok=False), 500))
@@ -72,16 +75,74 @@ def upload():
                                 rewind=True,
                                 num_retries=3
                                 )
+    cloud_file.cache_control = 'public, max-age=0'
+    cloud_file.patch()
 
     media = models.Media(owner_id=user.key,
                          content_type=content_type,
                          uri=uri)
-    with models.db.context():
-        media_key = media.put()
+    media_key = media.put()
 
-        return jsonify(ok=True,
-                       media=dict(
-                           id=media_key.id(),
-                           url='%s%s' % (CLOUD_STORAGE_BASE_URL, uri),
-                           content_type=content_type
-                       ))
+    return jsonify(ok=True,
+                   media=dict(
+                       id=media_key.id(),
+                       url='%s%s' % (CLOUD_STORAGE_BASE_URL, uri),
+                       content_type=content_type
+                   ))
+
+
+@context_required
+def edit_photo(media_id):
+    if not bucket.exists():
+        return make_response((jsonify(ok=False), 500))
+
+    user_id = identity()
+
+    media = Media.get_by_media_id(media_id)
+    if media is None:
+        return make_response((jsonify(ok=False), 404))
+    if media.owner_id.id() != user_id:
+        return make_response((jsonify(ok=False), 403))
+
+    if 'op' not in request.args:
+        return make_response((jsonify(ok=False), 400))
+
+    operation = request.args['op']
+    if operation != 'rotate_left' and operation != 'rotate_right':
+        return make_response((jsonify(ok=False), 400))
+
+    filename = media.uri.replace(r"/karteikarten-media/", "")
+    logger.log_text("filename: {filename}".format(filename=filename))
+    cloud_file = bucket.blob(filename)
+
+    buffer = io.BytesIO()
+    cloud_file.download_to_file(buffer)
+
+    buffer.seek(0)
+    im = Image.open(buffer)
+
+    if operation == 'rotate_left':
+        im = im.transpose(Image.ROTATE_90)
+    elif operation == 'rotate_right':
+        im = im.transpose(Image.ROTATE_270)
+    else:
+        return make_response((jsonify(ok=False), 400))
+
+    buffer = io.BytesIO()
+    im.save(buffer, ALLOWED_TYPES[media.content_type])
+    cloud_file = bucket.blob(filename)
+    cloud_file.upload_from_file(file_obj=buffer,
+                                content_type=media.content_type,
+                                predefined_acl='public-read',
+                                rewind=True,
+                                num_retries=3
+                                )
+    cloud_file.cache_control = 'public, max-age=0'
+    cloud_file.patch()
+
+    return jsonify(ok=True,
+                   media=dict(
+                       id=media.key.id(),
+                       url='%s%s' % (CLOUD_STORAGE_BASE_URL, media.uri),
+                       content_type=media.content_type
+                   ))

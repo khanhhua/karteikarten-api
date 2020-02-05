@@ -4,7 +4,7 @@ from . import models
 
 def collection_stats(user_id, collection):
     item_ids = collection['item_ids']
-    scorecards = map(lambda card_id: models.ScoreCard.query_by_card_id(user_id, card_id), item_ids)
+    scorecards = list(map(lambda card_id: models.ScoreCard.query_by_card_id(user_id, card_id), item_ids))
 
     stats = {
         'corrects': 0,
@@ -19,6 +19,9 @@ def collection_stats(user_id, collection):
         return collection
 
     def iterator(acc, scorecard):
+        if scorecard is None:
+            return acc
+
         acc['corrects'] += scorecard.corrects
         acc['wrongs'] += scorecard.wrongs
         acc['skippeds'] += scorecard.skippeds

@@ -18,15 +18,13 @@ def current_user():
 
     access_token = parts[1]
     payload = jwt.get_unverified_claims(access_token)  # TODO production: verify must be True
-    with models.db.context():
-        user = models.User.query_by_user_id(payload['sub'])
-        if user is None:
-            raise ValueError('Authentication required')
+    user = models.User.query_by_user_id(payload['sub'])
+    if user is None:
+        raise ValueError('Authentication required')
 
     return user
 
 
 def identity():
-    with models.db.context():
-        user = current_user()
-        return user.key.id()
+    user = current_user()
+    return user.key.id()

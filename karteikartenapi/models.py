@@ -3,7 +3,7 @@ import mock
 import google.auth.credentials
 from google.cloud import ndb
 
-CLOUD_STORAGE_BASE_URL = os.getenv('CLOUD_STORAGE_BASE_URL', 'https://storage.cloud.google.com')
+CLOUD_STORAGE_BASE_URL = os.getenv('CLOUD_STORAGE_BASE_URL', 'https://storage.googleapis.com')
 
 
 def setup_db():

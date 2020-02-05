@@ -8,7 +8,7 @@ from karteikartenapi import rest
 
 
 app = Flask(__name__)
-CORS(app, resources={r'/*': {'origins': '*'}})
+CORS(app, resources={r'/*': {'origins': '*', 'supports_credential': True}})
 
 
 app.add_url_rule('/auth/handler', 'auth.handler', rest.login, methods=['GET'])
@@ -26,6 +26,7 @@ app.add_url_rule('/me/scorecard/<int:card_id>', 'me.scorecard.update', rest.upda
 app.add_url_rule('/me/recent-collections', 'me.recent-collections.update', rest.update_recent_collections, methods=['PATCH'])
 
 app.add_url_rule('/media', 'media.create', media.upload, methods=['POST'])
+app.add_url_rule('/media/<int:media_id>', 'media.edit', media.edit_photo, methods=['PUT'])
 
 
 if __name__ == '__main__':
