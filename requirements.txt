@@ -23,7 +23,7 @@ GoogleAppEngineCloudStorageClient==1.9.22.1
 grpcio==1.26.0
 gunicorn==19.10.0
 hashids==1.2.0
-httplib2==0.16.0
+httplib2==0.18.0
 idna==2.8
 itsdangerous==1.1.0
 Jinja2==2.10.3
