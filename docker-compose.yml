@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  mongo:
+    image: mongo:3.4.18-jessie
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: root
+      MONGO_INITDB_DATABASE: admin
+    volumes:
+      - ./data:/data/db
+      - ./mongo:/docker-entrypoint-initdb.d

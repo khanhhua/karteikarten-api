@@ -2,7 +2,7 @@
 
 from flask import Flask
 from flask_script import Manager
-from karteikarten.models import (
+from karteikartenapi.models import (
     db,
     User,
     Card,

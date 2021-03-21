@@ -1,3 +1,8 @@
 venv
 *.pyc
 .env
+
+.idea
+
+*secret*
+data
