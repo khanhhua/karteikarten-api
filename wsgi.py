@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, send_file
 from flask_cors import CORS
 from karteikartenapi import (
     media,
@@ -7,8 +7,16 @@ from karteikartenapi import (
 )
 from karteikartenapi.models import db
 
-app = Flask(__name__)
-app.config.from_object('config.DevelopmentConfig')
+is_development = os.getenv('FLASK_ENV') == 'development'
+
+app = Flask(__name__,
+            static_url_path='',
+            static_folder='static',
+            )
+if is_development:
+    app.config.from_object('config.DevelopmentConfig')
+else:
+    app.config.from_object('config.ProductionConfig')
 db.init_app(app)
 
 
@@ -29,7 +37,12 @@ app.add_url_rule('/me/recent-collections', 'me.recent-collections.update', rest.
 app.add_url_rule('/media', 'media.create', media.upload, methods=['POST'])
 app.add_url_rule('/media/<int:media_id>', 'media.edit', media.edit_photo, methods=['PUT'])
 
-CORS(app, resources={r'/*': {'origins': '*', 'supports_credential': True}})
+@app.route('/')
+def index():
+    return send_file('static/index.html')
+
+if is_development:
+    CORS(app, resources={r'/*': {'origins': '*', 'supports_credential': True}})
 
 
 if __name__ == '__main__':
