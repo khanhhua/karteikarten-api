@@ -101,32 +101,32 @@ def update_card_by_id(card_id):
 
     EDITABLES = ['back', 'front', 'media_id']
 
-    old_media_id = card.media_id
-    old_media = card.media_id.get() if old_media_id is not None else None
-
-    updated_media_id = request.json['media_id'] if 'media_id' in request.json else None
-    if updated_media_id is None:
-        request.json['media_id'] = None
-    else:
-        updated_media = models.Media.get_by_media_id(updated_media_id)
-        request.json['media_id'] = None if updated_media is None else updated_media.key
+    # old_media_id = card.media_id
+    # old_media = card.media_id.get() if old_media_id is not None else None
+    #
+    # updated_media_id = request.json['media_id'] if 'media_id' in request.json else None
+    # if updated_media_id is None:
+    #     request.json['media_id'] = None
+    # else:
+    #     updated_media = models.Media.get_by_media_id(updated_media_id)
+    #     request.json['media_id'] = None if updated_media is None else updated_media.key
 
     data = {k: v for (k, v) in request.json.items() if k in EDITABLES}
     card.save(**data)
 
-    if old_media_id == updated_media_id:
-        pass
-    else:
-        if updated_media is not None:
-            card_ids = [item.id() for item in updated_media.card_ids]
-            if card_id not in card_ids:
-                updated_media.save(card_ids=card_ids + [card_id])
-        if old_media is not None:
-            card_ids = [item.id for item in old_media.card_ids]
-            if card_id in card_ids:
-                card_index = card_ids.index(card_id)
-                del old_media.card_ids[card_index]
-                updated_media.save()
+    # if old_media_id == updated_media_id:
+    #     pass
+    # else:
+    #     if updated_media is not None:
+    #         card_ids = [item.id() for item in updated_media.card_ids]
+    #         if card_id not in card_ids:
+    #             updated_media.save(card_ids=card_ids + [card_id])
+    #     if old_media is not None:
+    #         card_ids = [item.id for item in old_media.card_ids]
+    #         if card_id in card_ids:
+    #             card_index = card_ids.index(card_id)
+    #             del old_media.card_ids[card_index]
+    #             updated_media.save()
 
     return jsonify(ok=True, card=card.to_json())
 

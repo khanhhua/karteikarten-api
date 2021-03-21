@@ -44,11 +44,11 @@ class Card(db.Document):
 
     @classmethod
     def query_by_user_id(cls, user_id):
-        pass
+        return cls.objects.filter(owner_id__exact=user_id)
 
     @classmethod
     def get_by_card_id(cls, card_id):
-        pass
+        return cls.objects.filter(id__exact=card_id).first()
 
     @classmethod
     def get_by_card_ids(cls, card_ids):
