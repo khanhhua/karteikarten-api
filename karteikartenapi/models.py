@@ -28,7 +28,7 @@ class Card(db.Document):
         'collection': 'cards'
     }
 
-    owner_id = db.ReferenceField('User', required=True)
+    owner_id = db.LazyReferenceField('User', required=True)
     front = db.StringField(required=True, max_length=50)
     back = db.StringField(required=True, max_length=50)
     media_id = db.StringField(max_length=255)
@@ -61,7 +61,7 @@ class Collection(db.Document):
     }
 
     title = db.StringField(required=True, max_length=50)
-    owner_id = db.ReferenceField('User', required=True)
+    owner_id = db.LazyReferenceField('User', required=True)
     item_ids = db.ListField()
     created_at = db.DateTimeField(required=True, default=datetime.datetime.utcnow)
 
@@ -69,7 +69,7 @@ class Collection(db.Document):
         return dict(
             id=str(self.id),
             title=self.title,
-            owner_id=str(self.owner_id),
+            owner_id=str(self.owner_id.id),
             item_ids=self.item_ids
         )
 
@@ -118,7 +118,7 @@ class Media(db.Document):
         'collection': 'media'
     }
 
-    owner_id = db.ReferenceField('User', required=True)
+    owner_id = db.LazyReferenceField('User', required=True)
     uri = db.StringField(required=True, max_length=255)
     content_type = db.StringField(required=True)
     card_ids = db.ListField()
