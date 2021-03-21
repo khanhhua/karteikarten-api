@@ -35,7 +35,7 @@ app.add_url_rule('/me/scorecard/<card_id>', 'me.scorecard.update', rest.update_s
 app.add_url_rule('/me/recent-collections', 'me.recent-collections.update', rest.update_recent_collections, methods=['PATCH'])
 
 app.add_url_rule('/media', 'media.create', media.upload, methods=['POST'])
-app.add_url_rule('/media/<int:media_id>', 'media.edit', media.edit_photo, methods=['PUT'])
+app.add_url_rule('/media/<media_id>', 'media.edit', media.edit_photo, methods=['PUT'])
 
 @app.route('/')
 def index():

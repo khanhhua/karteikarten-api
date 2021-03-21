@@ -96,7 +96,7 @@ def update_card_by_id(card_id):
 
     if card is None:
         return make_response((jsonify(ok=False, error='Not found'), 404))
-    if card.owner_id.id() != user_id:
+    if str(card.owner_id.id) != user_id:
         return make_response((jsonify(ok=False, error='Not allowed'), 403))
 
     EDITABLES = ['back', 'front', 'media_id']
@@ -112,7 +112,7 @@ def update_card_by_id(card_id):
     #     request.json['media_id'] = None if updated_media is None else updated_media.key
 
     data = {k: v for (k, v) in request.json.items() if k in EDITABLES}
-    card.save(**data)
+    card.update(**data)
 
     # if old_media_id == updated_media_id:
     #     pass
