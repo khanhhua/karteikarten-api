@@ -113,6 +113,7 @@ def update_card_by_id(card_id):
 
     data = {k: v for (k, v) in request.json.items() if k in EDITABLES}
     card.update(**data)
+    card.reload()
 
     # if old_media_id == updated_media_id:
     #     pass
@@ -225,6 +226,7 @@ def update_collection_by_id(collection_id):
         data['item_ids'] = [item for item in data['item_ids']]
 
     collection.update(**data)
+    collection.reload()
 
     return jsonify(ok=True, collection=collection.to_json())
 
@@ -248,6 +250,7 @@ def update_scorecard(card_id):
     EDITABLES = ['corrects', 'wrongs', 'skippeds']
     data = {k: v + current[k] for (k, v) in request.json.items() if k in EDITABLES}
     scorecard.update(**data)
+    scorecard.reload()
 
     return jsonify(ok=True, scorecard=scorecard.to_json())
 
