@@ -31,6 +31,7 @@ class Card(db.Document):
     owner_id = db.LazyReferenceField('User', required=True)
     front = db.StringField(required=True, max_length=50)
     back = db.StringField(required=True, max_length=50)
+    tags = db.ListField()
     media_id = db.StringField(max_length=255)
     created_at = db.DateTimeField(required=True, default=datetime.datetime.utcnow)
 
@@ -39,6 +40,7 @@ class Card(db.Document):
             id=str(self.id),
             front=self.front,
             back=self.back,
+            tags=self.tags or [],
             media_id=self.media_id
         )
 
@@ -63,6 +65,7 @@ class Collection(db.Document):
     title = db.StringField(required=True, max_length=50)
     owner_id = db.LazyReferenceField('User', required=True)
     item_ids = db.ListField()
+    tags = db.ListField()
     created_at = db.DateTimeField(required=True, default=datetime.datetime.utcnow)
 
     def to_json(self):
@@ -70,6 +73,7 @@ class Collection(db.Document):
             id=str(self.id),
             title=self.title,
             owner_id=str(self.owner_id.id),
+            tags=self.tags or [],
             item_ids=self.item_ids
         )
 

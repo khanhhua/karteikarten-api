@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from flask import current_app, jsonify, request, make_response
 from jose import jwt
 
@@ -99,7 +101,7 @@ def update_card_by_id(card_id):
     if str(card.owner_id.id) != user_id:
         return make_response((jsonify(ok=False, error='Not allowed'), 403))
 
-    EDITABLES = ['back', 'front', 'media_id']
+    EDITABLES = ['back', 'front', 'tags', 'media_id']
 
     # old_media_id = card.media_id
     # old_media = card.media_id.get() if old_media_id is not None else None
@@ -182,10 +184,11 @@ def create_collection():
     user = current_user()
     user_id = identity()
 
-    data = request.json
+    data = defaultdict(None, **request.json)
     collection = models.Collection(
         owner_id=user_id,
-        title=data['title']
+        title=data['title'],
+        tags=data['tags']
     )
     collection.save()  # returns key
     recent_collection_ids = [collection.id] + user.recent_collection_ids\
