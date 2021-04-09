@@ -222,11 +222,13 @@ def update_collection_by_id(collection_id):
     if str(collection.owner_id.id) != user_id:
         return make_response((jsonify(ok=False, error='Not allowed'), 403))
 
-    EDITABLES = ['title', 'item_ids']
+    EDITABLES = ['title', 'item_ids', 'tags']
 
     data = {k: v for (k, v) in request.json.items() if k in EDITABLES}
     if 'item_ids' in data:
         data['item_ids'] = [item for item in data['item_ids']]
+    if 'tags' in data:
+        data['tags'] = filter(lambda tag: len(tag) > 0, map(lambda tag: tag.strip(), data['tags']))
 
     collection.update(**data)
     collection.reload()
